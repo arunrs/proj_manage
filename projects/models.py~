@@ -1,0 +1,221 @@
+from django.db import models
+from django.contrib.auth.models import User
+from django.utils.translation import ugettext_lazy as _
+
+# Create your models here.
+
+class DateInfoModel(models.Model):
+
+    """
+    This is Abstract model. it used for
+    inhertiance
+    """
+
+    created_on = models.DateTimeField(auto_now=True)
+    modified_on = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        abstract = True
+
+
+class PeriodInfoModel(DateInfoModel):
+
+    start_date = models.DateField(null=True, blank=True)
+    end_date =  models.DateField(null=True, blank=True)
+    actual_end_date = models.DateField(null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+        
+class InfoModel(DateInfoModel):
+
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+
+    class Meta:
+        abstract = True
+
+
+class CommonInfoModel(InfoModel, PeriodInfoModel):
+
+    class Meta:
+        abstract = True
+
+
+class Modelreference(DateInfoModel):
+
+    model_name = models.CharField(max_length=50)
+    reference = models.IntegerField()
+
+    class Meta:
+        abstract = True        
+
+
+class Domian(InfoModel):
+    
+    def __str__():
+        return self.name
+
+
+class ProjectMeta(models.Model):
+
+    developer = models.ManyToManyField(User,
+                                       related_name=_("project_developer"),
+                                       verbose_name=_("project_developer"))
+    scrum = models.ForeignKey(User,
+                              related_name=_("project_scrum"),
+                              verbose_name=_("project_scrum"))
+    
+    project_watcher = models.ManyToManyField(User,
+                                             related_name=_("watchers"),
+                                             verbose_name=_("watchers"))
+    
+class Project(CommonInfoModel):
+
+    client_name = models.ForeignKey(User,
+                                    related_name=_("client_name"),
+                                    verbose_name=_("client_name"))
+    domain = models.ForeignKey(Domian,
+                              related_name=_("project_domain"),
+                              verbose_name=_("project_domain"))
+
+    meta = models.ForeignKey(ProjectMeta,
+                             related_name=_("project_meta"),
+                             verbose_name=_("project_meta"))
+
+    class Meta:
+
+        db_table = 'project'
+        
+        
+    def __str__(self):
+
+        return self.name
+
+
+class Sprint(CommonInfoModel):
+
+    version = models.FloatField(default=0.1)
+    tagged = models.FloatField(null=True, blank=True,
+                               )
+    project_ref = models.ForeignKey(Project,
+                                    related_name=_("project_ref"),
+                                    verbose_name=_("project_ref"))
+    freezed_sprint = models.BooleanField(default=True)
+
+
+    class Meta:
+
+        db_table = "sprint"
+        unique_together = ("project_ref", "name")
+        
+        
+    def __str__(self):
+
+        return self.project_ref.name + "-" + self.name
+
+
+
+class FilereferenceModel(Modelreference):
+
+    image_file = models.ImageField()
+    
+    class Meta:
+        db_table = 'file_paths'
+
+
+class CommentModel(Modelreference):
+
+    comment = models.TextField()
+
+    class meta:
+
+       db_table = 'comments'
+                
+
+    
+class Task(CommonInfoModel):
+
+    name = models.CharField(max_length=255)
+    technology = models.CharField(max_lenght=100)
+    sprint = models.ForeignKey(Sprint,
+                               related_name=_("sprint_name"),
+                               verbose_name=_("sprint_name"))
+    
+    allocated_user = models.ForeignKey(User,
+                                       related_name=_("alloted_dev"),
+                                       verbose_name=_("alloted_dev")
+                                       )
+    slug_name = models.SlugField()
+
+    screeshots = models.ForeignKey(FilereferenceModel,
+                                   null=True,
+                                   blank=True,
+                                   limit_choices_to={"model_name":"Task",
+                                                    "reference":self.id})
+    
+    estimated_hrs = models.SmallPositiveInteger(default=1)
+    
+    any_delay = models.BooleanField(default=True)
+    
+    reason_delay = models.TextField(null=True, blank=True)
+    
+    comments = model.ForeignKey(CommentModel,
+                                null=True,
+                                blank=True,
+                                limit_choices_to={"model": "Task",
+                                                 "reference":self.id})
+    
+    additional = models.BooleanField(default=False)
+
+    closed = models.BooleanField(default=False)
+    
+    class Meta:
+        db_table = 'task'
+    
+
+    def __str__(self):
+
+        return self.slug_name
+        
+    def save(self, *args, **kwargs):
+
+        self.slug_name = self.sprint.__name__ + " " + self.name
+        
+        return super(Task, self).save(*args, **kwargs)
+
+
+class Bug(CommonInfoModel):
+
+    page_url = models.URLField(null=True,
+                               blank=True)
+
+    screenshot = models.ForeignKey(FilereferenceModel,
+                                   null=True,
+                                   blank=True,
+                                   limit_choices_to={"model_name":"Bug",\
+                                                    "reference":self.id})
+    
+    comments = model.ForeignKey(CommentModel,
+                                null=True,
+                                blank=True,
+                                limit_choices_to={"model": "Bug", \
+                                                 "reference":self.id})
+    reopened = models.IntegerField(default=0)
+
+    related_task = models.ForeignKey(Task,
+                                     null=True,
+                                     blank=True
+                                     )
+    closed = models.BooleanField(default=False)
+    
+                    
+    class Meta:
+
+        db_table = 'bug'
+
+
+    def __str__(self):
+
+        return self.name
