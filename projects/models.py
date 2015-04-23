@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.utils.translation import ugettext_lazy as _
 
 # Create your models here.
@@ -54,11 +54,13 @@ class Modelreference(DateInfoModel):
 
 class Domian(InfoModel):
     
-    def __str__():
+    def __str__(self):
         return self.name
 
 
 class ProjectMeta(models.Model):
+
+    team_name = models.CharField(max_length=150)
 
     developer = models.ManyToManyField(User,
                                        related_name=_("project_developer"),
@@ -70,6 +72,13 @@ class ProjectMeta(models.Model):
     project_watcher = models.ManyToManyField(User,
                                              related_name=_("watchers"),
                                              verbose_name=_("watchers"))
+
+
+    def __str__(self):
+
+        return self.team_name
+    
+    
     
 class Project(CommonInfoModel):
 
@@ -97,8 +106,7 @@ class Project(CommonInfoModel):
 class Sprint(CommonInfoModel):
 
     version = models.FloatField(default=0.1)
-    tagged = models.FloatField(null=True, blank=True,
-                               )
+    tagged = models.FloatField(null=True, blank=True)
     project_ref = models.ForeignKey(Project,
                                     related_name=_("project_ref"),
                                     verbose_name=_("project_ref"))
