@@ -65,9 +65,23 @@ class TaskAdmin(admin.ModelAdmin):
                     )
 
     list_filter = ('closed', 'additional')
+    
+
+class BugAdmin(admin.ModelAdmin):
+
+    list_display = ('name',
+                    'page_url',
+                    'reopened',
+                    'related_task',
+                    'start_date',
+                    'end_date',
+                    'closed')
+
         
     
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(ProjectMeta, ProjectGroup)
 admin.site.register(Domian, DomainAdmin)
 admin.site.register(Sprint, SprintAdmin)
+admin.site.register(Task, TaskAdmin)
+

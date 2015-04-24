@@ -140,12 +140,40 @@ class CommentModel(Modelreference):
     class meta:
 
        db_table = 'comments'
+
+
+class CommonTaskInfo(CommonInfoModel):
+
+    CHOICES = (('C', 'Current'),
+               ('E', 'Enhancement'))
+
+    STATUS = (('N', 'New'),
+              ('O', 'Open'),
+              ('C', 'Closed'))
+                
+    types = models.CharField(max_length=1,
+                             choices=CHOICES,
+                             default='C')
+
+    status = models.CharField(max_length=1,
+                              choices=STATUS,
+                              default='N')
+
+    closed = models.BooleanField(default=False)
+
+    reopened = models.IntegerField(default=0)
+
+    class Meta:
+
+        abstract = True
                 
 
     
-class Task(CommonInfoModel):
+class Task(CommonTaskInfo):
 
+    
     technology = models.CharField(max_length=100)
+    
     sprint = models.ForeignKey(Sprint,
                                related_name=_("sprint_name"),
                                verbose_name=_("sprint_name"))
@@ -154,7 +182,7 @@ class Task(CommonInfoModel):
                                        related_name=_("alloted_dev"),
                                        verbose_name=_("alloted_dev")
                                        )
-    slug_name = models.SlugField()
+    slug_name = models.SlugField(null=True, blank=True)
 
     screeshots = models.ForeignKey(FilereferenceModel,
                                    null=True,
@@ -170,12 +198,10 @@ class Task(CommonInfoModel):
     comments = models.ForeignKey(CommentModel,
                                 null=True,
                                 blank=True,
-                                limit_choices_to={"model": "Task"})
+                                limit_choices_to={"model_name": "Task"})
     
     additional = models.BooleanField(default=False)
 
-    closed = models.BooleanField(default=False)
-    
     class Meta:
         db_table = 'task'
     
@@ -186,12 +212,14 @@ class Task(CommonInfoModel):
         
     def save(self, *args, **kwargs):
 
-        self.slug_name = self.sprint.__name__ + " " + self.name
-        
+        print(dir(self))
+
+        #self.slug_name = self.sprint.__name__ + " " + self.name
+
         return super(Task, self).save(*args, **kwargs)
 
-
-class Bug(CommonInfoModel):
+    
+class Bug(CommonTaskInfo):
 
     page_url = models.URLField(null=True,
                                blank=True)
@@ -204,17 +232,12 @@ class Bug(CommonInfoModel):
     comments = models.ForeignKey(CommentModel,
                                 null=True,
                                 blank=True,
-                                limit_choices_to={"model": "Bug"})
-    reopened = models.IntegerField(default=0)
-
+                                limit_choices_to={"model_name": "Bug"})
+    
     related_task = models.ForeignKey(Task,
                                      null=True,
                                      blank=True
                                      )
-    
-    closed = models.BooleanField(default=False)
-    
-                    
     class Meta:
 
         db_table = 'bug'
